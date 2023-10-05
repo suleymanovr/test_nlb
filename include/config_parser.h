@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <filesystem>
+#include <utility>
 
 namespace config {
 struct net_addr {
@@ -24,5 +25,5 @@ struct main_task {
   	std::vector<server> server_pool;
 };
 
-struct main_task parse(const std::filesystem::path &conf_path);
+bool parse(const std::filesystem::path &conf_path, struct main_task &parse_conf);
 }; // namespace config
