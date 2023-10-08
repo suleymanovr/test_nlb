@@ -125,9 +125,7 @@ namespace parse {
 		bool operator()(const std::vector<std::string> &section)
 		{
 			for (auto line : section){
-				if (line.find(alias) != std::string::npos){
-					parsed_res.alias.assign(value(alias, line));
-				} else if (line.find(host) != std::string::npos){
+				if (line.find(host) != std::string::npos){
 					std::string	ip_addr = value(host, line);
 					if (!validate::value::host(host)){
 						print_error::bad_value(section_name, host, ip_addr);
@@ -146,10 +144,6 @@ namespace parse {
 				}
 			}
 
-			if (parsed_res.alias.empty()){
-				print_error::key_not_found(section_name, alias);
-				return false;
-			}
 			if (parsed_res.hostname.host.empty()){
 				print_error::key_not_found(section_name, host);
 				return false;
@@ -165,7 +159,6 @@ namespace parse {
 		private:
 			// values
 			const std::string section_name{"server"};
-			const std::string alias{"alias"};
 			const std::string host{"host"};
 			const std::string service{"service"};
 	};

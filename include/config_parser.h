@@ -16,12 +16,11 @@ struct balancer {
 };
 
 struct server {
-	std::string alias;
 	net_addr hostname; 
 };
 
 struct main_task {
-	struct balancer nlb;
+	struct balancer load_bal;
   	std::vector<server> server_pool;
 };
 
