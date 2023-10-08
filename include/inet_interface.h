@@ -2,6 +2,7 @@
 
 #include <string>
 #include <sys/socket.h>
+#include <netdb.h>
 
 #include "config_parser.h"
 
@@ -12,16 +13,13 @@ class inner_if {
   	  	  : host{host_}, service{service_} {}
 
 		bool init();
-		bool is_initialized() { return initialized; };
 		bool operator<<(std::string msg_to_send);
 
 	private:
-		bool initialized;
 		int socket_fd;
 		const std::string host;
 		const unsigned service;
-		struct sockadd *dest_addr;
-		socklen_t dest_len;
+		struct addrinfo sockinfo;
 };
 
 class outer_if {
@@ -30,11 +28,9 @@ class outer_if {
   	  	  : host{host_}, service{service_} {}
 
 		bool init();
-		bool is_initialized() { return initialized; };
 		bool operator>>(std::string msg_to_recv);
 
 	private:
-		bool initialized;
 		int socket_fd;
 		const std::string host;
 		const unsigned service;

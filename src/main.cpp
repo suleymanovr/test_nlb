@@ -1,13 +1,7 @@
-#include <chrono>
 #include <iostream>
 #include <string>
-#include <vector>
-#include <iterator>
-#include <list>
-#include <utility>
 
-#include "config_parser.h"
-#include "inet_interface.h"
+#include "balancer.h"
 
 namespace print {
 namespace debug {
@@ -38,6 +32,9 @@ int main(int argc, char *argv[])
 		std::cerr << "Unable to parse input file: " << conf_path << std::endl;
 		return 1;
 	}
+
+	balancer nlb{conf};
+	nlb.run();
 
   	return 0;
 }
