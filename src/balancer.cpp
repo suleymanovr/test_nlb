@@ -71,19 +71,17 @@ balancer::balancer(const config::main_task &set)
 void balancer::run(void)
 {
   	string msg;
-	long dg_per_sec = chrono::nanoseconds(1s).count()/max_load;
+	const long pps = chrono::nanoseconds(1s).count()/max_load;
+	timespec tremain{};
 
-	chrono::steady_clock::time_point t1{};
 
 	// Looped until socket operation fail or server pool empty
 	while (recv.receive(msg) && !server_pool.empty()) {
-		auto t2 = chrono::steady_clock::now();
-		auto diff = t2 - t1;
-		if (diff.count() < dg_per_sec) {
-    		cout << "DROPPED: \"" << msg << "\"" << endl;
-		} else {
-			t1 = t2;
-    		dummy_round_robin(redir, server_pool, msg);
-		}
+		auto t1 = chrono::steady_clock::now();
+    	dummy_round_robin(redir, server_pool, msg);
+    	auto tspent = chrono::steady_clock::now() - t1;
+
+    	tremain.tv_nsec = pps - tspent.count();
+    	nanosleep(&tremain, nullptr_t());
 	}
 }

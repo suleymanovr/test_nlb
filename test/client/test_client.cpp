@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
 	}
 	
 	// Generate message randomly in period from 1 to: 
-	load_gen random_freq_msg{100000};  //microsecs
+	load_gen random_freq_msg{1000};  //microsecs
 
 	inet::msg send;
 	send.host = argv[1];

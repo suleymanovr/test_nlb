@@ -34,3 +34,5 @@
 compile_commands.json
 build/
 .cache/
+test/server/tserver*
+test/client/tclient*
