@@ -2,21 +2,24 @@
 #include <iostream>
 #include <fstream>
 #include <regex>
+#include <chrono>
+
+using namespace std;
 
 namespace validate {
-	inline bool key_value_pair(const std::string &line)
+	inline bool key_value_pair(const string &line)
 	{
-		std::regex 	pat { R"([a-zA-Z_]+ = \S+$)" };
-		std::smatch res;
+		regex 	pat { R"([a-zA-Z_]+ = \S+$)" };
+		smatch res;
 
-		return std::regex_match(line, res, pat);
+		return regex_match(line, res, pat);
 	}
 
-	inline bool section(const std::string &str)
+	inline bool section(const string &str)
 	{ return ((str[0] == '[') && (str[str.size()-1] == ']')); }
 	
 	namespace value {
-		inline bool host(const std::string &host)
+		inline bool host(const string &host)
 		{
 
 			return true;
@@ -33,12 +36,12 @@ namespace validate {
 namespace parse {
 	/**
 	 * @return  position of value in "line" if "key" found in "line", 
-	 * otherwise std::string::npos
+	 * otherwise string::npos
 	 */
-	inline std::string value(const std::string &key, const std::string &line)
+	inline string value(const string &key, const string &line)
 	{
 		const short kv_dist = 3; // n chars between key and value
-		std::string value;
+		string value;
 		
 		value.assign(line.substr(key.size()+kv_dist));
 
@@ -46,36 +49,36 @@ namespace parse {
 	}
 
 	namespace print_error {
-		inline void key_not_found(const std::string &section_name, 
-								  const std::string &key)
+		inline void key_not_found(const string &section_name, 
+								  const string &key)
 		{
-			std::cerr << "In section: " << section_name << " " 
+			cerr << "In section: " << section_name << " " 
 								   		<< key << " not found!\n"; 
 		}
 
-		inline void bad_value(const std::string &section_name,
-								const std::string &key, const std::string &val)
+		inline void bad_value(const string &section_name,
+								const string &key, const string &val)
 		{
-			std::cerr << "In section: " << section_name << " bad value " 
-										<< val << " for key " << key << std::endl;
+			cerr << "In section: " << section_name << " bad value " 
+										<< val << " for key " << key << endl;
 		}
 	}
  
 	struct balancer {
 		config::balancer parsed_res;
 
-		bool operator()(const std::vector<std::string> &section)
+		bool operator()(const vector<string> &section)
 		{
 			for (auto line : section){
-				if (line.find(outer_host) != std::string::npos){
-					std::string	ip_addr = value(outer_host, line);
+				if (line.find(outer_host) != string::npos){
+					string	ip_addr = value(outer_host, line);
 					if (!validate::value::host(outer_host)){
 						print_error::bad_value(section_name, outer_host, ip_addr);
 						return false;
 					}
 					parsed_res.outer.host.assign(ip_addr);
-				} else if (line.find(outer_service) != std::string::npos){
-					std::string	str_port = value(outer_service, line);
+				} else if (line.find(outer_service) != string::npos){
+					string	str_port = value(outer_service, line);
 					unsigned int port = atoi(str_port.c_str());
 
 					if (!validate::value::service(port)){
@@ -83,15 +86,15 @@ namespace parse {
 						return false;
 					}
 					parsed_res.outer.service = port;	
-				} else if (line.find(inner_host) != std::string::npos){
-					std::string	ip_addr = value(inner_host, line);
+				} else if (line.find(inner_host) != string::npos){
+					string	ip_addr = value(inner_host, line);
 					if (!validate::value::host(inner_host)){
 						print_error::bad_value(section_name, inner_host, ip_addr);
 						return false;
 					}
 					parsed_res.inner.host.assign(ip_addr);
-				} else if (line.find(inner_service) != std::string::npos){
-					std::string	str_port = value(inner_service, line);
+				} else if (line.find(inner_service) != string::npos){
+					string	str_port = value(inner_service, line);
 					unsigned int port = atoi(str_port.c_str());
 
 					if (!validate::value::service(port)){
@@ -99,11 +102,11 @@ namespace parse {
 						return false;
 					}
 					parsed_res.inner.service = port;	
-				} else if (line.find(max_dg_load) != std::string::npos){
-					std::string	s = value(max_dg_load, line);
+				} else if (line.find(max_dg_load) != string::npos){
+					string	s = value(max_dg_load, line);
 					unsigned int n = atoi(s.c_str());
 
-					if (n <= 0){
+					if (n <= 0 || n > chrono::nanoseconds(1s).count()){
 						print_error::bad_value(section_name, max_dg_load, s);
 						return false;
 					}
@@ -137,29 +140,29 @@ namespace parse {
 
 		private:
 			// values
-			const std::string section_name{"balancer"};
-			const std::string outer_host{"outer_host"};
-			const std::string outer_service{"outer_service"};
-			const std::string inner_host{"inner_host"};
-			const std::string inner_service{"inner_service"};
-			const std::string max_dg_load{"max_dg_load"};
+			const string section_name{"balancer"};
+			const string outer_host{"outer_host"};
+			const string outer_service{"outer_service"};
+			const string inner_host{"inner_host"};
+			const string inner_service{"inner_service"};
+			const string max_dg_load{"max_dg_load"};
 	};
 	
 	struct server {
 		config::net_addr parsed_res;
 
-		bool operator()(const std::vector<std::string> &section)
+		bool operator()(const vector<string> &section)
 		{
 			for (auto line : section){
-				if (line.find(host) != std::string::npos){
-					std::string	ip_addr = value(host, line);
+				if (line.find(host) != string::npos){
+					string	ip_addr = value(host, line);
 					if (!validate::value::host(host)){
 						print_error::bad_value(section_name, host, ip_addr);
 						return false;
 					}
 					parsed_res.host.assign(ip_addr);
-				} else if (line.find(service) != std::string::npos){
-					std::string	str_port = value(service, line);
+				} else if (line.find(service) != string::npos){
+					string	str_port = value(service, line);
 					unsigned int port = atoi(str_port.c_str());
 
 					if (!validate::value::service(port)){
@@ -184,42 +187,42 @@ namespace parse {
 
 		private:
 			// values
-			const std::string section_name{"server"};
-			const std::string host{"host"};
-			const std::string service{"service"};
+			const string section_name{"server"};
+			const string host{"host"};
+			const string service{"service"};
 	};
 }
 
-static inline void perror_in_line(std::string &line, 
+static inline void perror_in_line(string &line, 
 								  size_t lnum, const char* err)
 {
-	std::cerr << "Error (line " << lnum << "): " << '"' << line << '"' << ". " 
-														   << err << std::endl;
+	cerr << "Error (line " << lnum << "): " << '"' << line << '"' << ". " 
+														   << err << endl;
 }
 
-bool config::parse(const std::filesystem::path &conf_path, 
+bool config::parse(const filesystem::path &conf_path, 
 			  	   struct config::main_task &parse_conf)
 {
-	std::ifstream conf_file;
-	conf_file.open(conf_path, std::ios_base::in);
+	ifstream conf_file;
+	conf_file.open(conf_path, ios_base::in);
 
 	if (!conf_file.is_open()) {
-		std::cerr << "Failed to open " << conf_path.filename() << std::endl;
+		cerr << "Failed to open " << conf_path.filename() << endl;
 		return false;
 	}
 
-	std::string line;
+	string line;
 	size_t line_cnt = 0;
 
-	while(std::getline(conf_file, line)){
+	while(getline(conf_file, line)){
 		line_cnt++;
 		if (validate::section(line)){
-			std::string section_name;
-			std::vector<std::string> section_content;
+			string section_name;
+			vector<string> section_content;
 			// remove square braces
 			section_name.assign(line.substr(1, line.size()-2));
 
-			while(std::getline(conf_file, line)){
+			while(getline(conf_file, line)){
 				line_cnt++;
 
 				if (line.empty()){

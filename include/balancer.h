@@ -7,6 +7,7 @@
 
 namespace error {
 struct socket_init {};
+struct bad_max_dg_load {};
 } // namespace error
 
 class balancer {

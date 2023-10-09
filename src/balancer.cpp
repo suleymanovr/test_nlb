@@ -61,6 +61,9 @@ balancer::balancer(const config::main_task &set)
 		throw error::socket_init{};	
 	}
 
+	if (set.nlb.max_dg_load > chrono::nanoseconds(1s).count()){
+		throw error::bad_max_dg_load{};
+	}
 	max_load = set.nlb.max_dg_load;
 }
 
