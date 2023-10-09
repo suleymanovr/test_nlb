@@ -12,12 +12,13 @@ static void structured_input(const config::main_task &conf) {
 	return p.str();
 	};
 	std::cout << "Balancer config:\n"
-        	<< hostname(conf.load_bal.hostname) << "\n"
-        	<< "max_dg_load: " << conf.load_bal.max_dg_load << "\n\n";
+        	<< hostname(conf.nlb.outer) << "\n"
+        	<< hostname(conf.nlb.inner) << "\n"
+        	<< "max_dg_load: " << conf.nlb.max_dg_load << "\n\n";
 
 	for (auto rec : conf.server_pool) {
 	std::cout << "Server config:\n"
-          	  << hostname(rec.hostname) << "\n\n";
+          	  << hostname(rec) << "\n\n";
 	}
 }
 } // namespace debug

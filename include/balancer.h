@@ -16,6 +16,7 @@ class balancer {
 
 	private:
 		inet::outer_if recv;
-		std::list<inet::inner_if> redir;
+		inet::inner_if redir;
+		std::list<config::net_addr> server_pool;
 		unsigned int max_load;
 };

@@ -15,10 +15,10 @@ OBJS := $(SRCS:%=$(BUILD_DIR)/%.o)
 
 INC_FLAGS := $(addprefix -I, $(INC_DIR))
 
-CPPFLAGS ?= $(INC_FLAGS) -MMD -MP
+CPPFLAGS ?= $(INC_FLAGS) -g -MMD -MP
 
 $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
-	g++ -lpthread -o $@ $(OBJS)
+	g++ -o $@ $(OBJS)
 
 $(BUILD_DIR)/%.cc.o: %.cc
 	$(MKDIR_P) $(dir $@)

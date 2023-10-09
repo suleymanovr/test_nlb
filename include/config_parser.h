@@ -11,17 +11,14 @@ struct net_addr {
 };
 
 struct balancer {
-	net_addr hostname; 
+	net_addr outer; 
+	net_addr inner; 
 	unsigned int max_dg_load; 		// Max datagrams per second
 };
 
-struct server {
-	net_addr hostname; 
-};
-
 struct main_task {
-	struct balancer load_bal;
-  	std::vector<server> server_pool;
+	struct balancer nlb;
+  	std::vector<net_addr> server_pool;
 };
 
 bool parse(const std::filesystem::path &conf_path, struct main_task &parse_conf);

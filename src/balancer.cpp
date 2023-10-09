@@ -5,7 +5,7 @@
 #include "balancer.h"
 
 using namespace std;
-
+ 
 namespace error {
 	void fail_init_socket(config::net_addr a) {
   	  	std::cerr << "Failed to init socker for " << a.host << " " << a.service
@@ -15,49 +15,53 @@ namespace error {
 
 
 // Fair distribution algorithm
-template <typename where, typename what>
-void dummy_round_robin(list<where> &target_pool, what to_send) {
-	static auto i = target_pool.begin();
-
-  	if (i == target_pool.end()) {
-  		i = target_pool.begin();
+void dummy_round_robin(inet::inner_if dest, list<config::net_addr> &pool, 
+					   string msg_to_send) 
+{
+	static auto i = pool.begin();
+	
+  	if (i == pool.end()) {
+  		i = pool.begin();
   	}
-  	if (!(*i << to_send)) {
+
+	inet::msg m;
+	m.msg.assign(msg_to_send);
+	m.host.assign(i->host);
+	m.service = i->service;
+
+  	if (!(dest.send(m))) {
 		// Socket input failed, remove this node from pool
-		i = target_pool.erase(i);
+		i = pool.erase(i);
     	return;
   	}
   	i++;
 }
 
 balancer::balancer(const config::main_task &set) 
-	// Initialize outer inet interface (as server) to receive client's datagramms
-	: recv{set.load_bal.hostname.host, set.load_bal.hostname.service} 
+	// Initialize outer inet interface (as server) to receive client's datagramms 
+	// and inner inet interface (as client) to redirect datagramms
+	: recv{set.nlb.outer.host, set.nlb.outer.service},
+	  redir{set.nlb.inner.host, set.nlb.inner.service}
 {
 	if (!recv.init()){
-		error::fail_init_socket(set.load_bal.hostname);
+		error::fail_init_socket(set.nlb.outer);
 		throw error::socket_init{};
 	}
 
-	// Initialize inner inet interfaces (as clients) to redirect datagramms
-	for (auto conf_node : set.server_pool) {
-		inet::inner_if node{conf_node.hostname.host, 
-							conf_node.hostname.service};
-
-		if (!node.init()) {
-      		// Failed to initialize socket, skip this node
-			error::fail_init_socket(conf_node.hostname);
-      	  	continue;
-		
-		}
-		redir.push_back(node);
+	if (!redir.init()){
+		error::fail_init_socket(set.nlb.inner);
+		throw error::socket_init{};
 	}
 
-	if (redir.empty()) {
+	for (auto node : set.server_pool) {
+		server_pool.push_back(node);
+	}
+
+	if (server_pool.empty()) {
 		throw error::socket_init{};	
 	}
 
-	max_load = set.load_bal.max_dg_load;
+	max_load = set.nlb.max_dg_load;
 }
 
 
@@ -69,15 +73,14 @@ void balancer::run(void)
 	chrono::steady_clock::time_point t1{};
 
 	// Looped until socket operation fail or server pool empty
-	while (!(recv >> msg) && !redir.empty()) {
+	while (recv.receive(msg) && !server_pool.empty()) {
 		auto t2 = chrono::steady_clock::now();
 		auto diff = t2 - t1;
 		if (diff.count() < dg_per_sec) {
-    		/* cout << "DROPPED: \"" << msg << "\"" << endl; */
+    		cout << "DROPPED: \"" << msg << "\"" << endl;
 		} else {
 			t1 = t2;
-    		dummy_round_robin(redir, msg);
-    		/* cout << msg << endl; */
+    		dummy_round_robin(redir, server_pool, msg);
 		}
 	}
 }

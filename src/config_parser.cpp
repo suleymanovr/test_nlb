@@ -60,29 +60,45 @@ namespace parse {
 										<< val << " for key " << key << std::endl;
 		}
 	}
-
+ 
 	struct balancer {
 		config::balancer parsed_res;
 
 		bool operator()(const std::vector<std::string> &section)
 		{
 			for (auto line : section){
-				if (line.find(host) != std::string::npos){
-					std::string	ip_addr = value(host, line);
-					if (!validate::value::host(host)){
-						print_error::bad_value(section_name, host, ip_addr);
+				if (line.find(outer_host) != std::string::npos){
+					std::string	ip_addr = value(outer_host, line);
+					if (!validate::value::host(outer_host)){
+						print_error::bad_value(section_name, outer_host, ip_addr);
 						return false;
 					}
-					parsed_res.hostname.host.assign(ip_addr);
-				} else if (line.find(service) != std::string::npos){
-					std::string	str_port = value(service, line);
+					parsed_res.outer.host.assign(ip_addr);
+				} else if (line.find(outer_service) != std::string::npos){
+					std::string	str_port = value(outer_service, line);
 					unsigned int port = atoi(str_port.c_str());
 
 					if (!validate::value::service(port)){
-						print_error::bad_value(section_name, service, str_port);
+						print_error::bad_value(section_name, outer_service, str_port);
 						return false;
 					}
-					parsed_res.hostname.service = port;	
+					parsed_res.outer.service = port;	
+				} else if (line.find(inner_host) != std::string::npos){
+					std::string	ip_addr = value(inner_host, line);
+					if (!validate::value::host(inner_host)){
+						print_error::bad_value(section_name, inner_host, ip_addr);
+						return false;
+					}
+					parsed_res.inner.host.assign(ip_addr);
+				} else if (line.find(inner_service) != std::string::npos){
+					std::string	str_port = value(inner_service, line);
+					unsigned int port = atoi(str_port.c_str());
+
+					if (!validate::value::service(port)){
+						print_error::bad_value(section_name, inner_service, str_port);
+						return false;
+					}
+					parsed_res.inner.service = port;	
 				} else if (line.find(max_dg_load) != std::string::npos){
 					std::string	s = value(max_dg_load, line);
 					unsigned int n = atoi(s.c_str());
@@ -95,12 +111,20 @@ namespace parse {
 				}
 			}
 
-			if (parsed_res.hostname.host.empty()){
-				print_error::key_not_found(section_name, host);
+			if (parsed_res.outer.host.empty()){
+				print_error::key_not_found(section_name, outer_host);
 				return false;
 			}
-			if (!parsed_res.hostname.service){
-				print_error::key_not_found(section_name, service);
+			if (!parsed_res.outer.service){
+				print_error::key_not_found(section_name, outer_service);
+				return false;
+			}
+			if (parsed_res.inner.host.empty()){
+				print_error::key_not_found(section_name, inner_host);
+				return false;
+			}
+			if (!parsed_res.inner.service){
+				print_error::key_not_found(section_name, inner_service);
 				return false;
 			}
 			if (!parsed_res.max_dg_load){
@@ -114,13 +138,15 @@ namespace parse {
 		private:
 			// values
 			const std::string section_name{"balancer"};
-			const std::string host{"host"};
-			const std::string service{"service"};
+			const std::string outer_host{"outer_host"};
+			const std::string outer_service{"outer_service"};
+			const std::string inner_host{"inner_host"};
+			const std::string inner_service{"inner_service"};
 			const std::string max_dg_load{"max_dg_load"};
 	};
 	
 	struct server {
-		config::server parsed_res;
+		config::net_addr parsed_res;
 
 		bool operator()(const std::vector<std::string> &section)
 		{
@@ -131,7 +157,7 @@ namespace parse {
 						print_error::bad_value(section_name, host, ip_addr);
 						return false;
 					}
-					parsed_res.hostname.host.assign(ip_addr);
+					parsed_res.host.assign(ip_addr);
 				} else if (line.find(service) != std::string::npos){
 					std::string	str_port = value(service, line);
 					unsigned int port = atoi(str_port.c_str());
@@ -140,15 +166,15 @@ namespace parse {
 						print_error::bad_value(section_name, service, str_port);
 						return false;
 					}
-					parsed_res.hostname.service = port;	
+					parsed_res.service = port;	
 				}
 			}
 
-			if (parsed_res.hostname.host.empty()){
+			if (parsed_res.host.empty()){
 				print_error::key_not_found(section_name, host);
 				return false;
 			}
-			if (!parsed_res.hostname.service){
+			if (!parsed_res.service){
 				print_error::key_not_found(section_name, service);
 				return false;
 			}
