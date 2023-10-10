@@ -78,10 +78,10 @@ void balancer::run(void)
 	// Looped until socket operation fail or server pool empty
 	while (recv.receive(msg) && !server_pool.empty()) {
 		auto t1 = chrono::steady_clock::now();
-    	dummy_round_robin(redir, server_pool, msg);
-    	auto tspent = chrono::steady_clock::now() - t1;
+    		dummy_round_robin(redir, server_pool, msg);
+    		auto tspent = chrono::steady_clock::now() - t1;
 
-    	tremain.tv_nsec = pps - tspent.count();
-    	nanosleep(&tremain, nullptr_t());
+    		tremain.tv_nsec = pps - tspent.count();
+    		nanosleep(&tremain, nullptr_t());
 	}
 }
