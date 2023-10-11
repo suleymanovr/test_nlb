@@ -106,7 +106,7 @@ namespace parse {
 					string	s = value(max_dg_load, line);
 					unsigned int n = atoi(s.c_str());
 
-					if (n <= 0 || n > chrono::nanoseconds(1s).count()){
+					if (n == 0){
 						print_error::bad_value(section_name, max_dg_load, s);
 						return false;
 					}

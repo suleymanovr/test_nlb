@@ -26,7 +26,7 @@ struct load_gen {
 		string operator()()
 		{
 			unsigned rand_n = rand_sleep_val();
-			usleep(rand_n);
+			usleep(900);
 
 			stringstream ret_msg;
 			ret_msg << "Hello, I slept for " << rand_n << " microsecs.";
@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
 	}
 	
 	// Generate message randomly in period from 1 to: 
-	load_gen random_freq_msg{1000};  //microsecs
+	load_gen random_freq_msg{10000};  //microsecs
 
 	inet::msg send;
 	send.host = argv[1];

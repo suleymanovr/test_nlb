@@ -13,6 +13,26 @@ namespace error {
 	}
 } // namespace error
 
+class time_interval {
+	public:
+		time_interval(unsigned set) : how_long{set}{}
+
+		void begin(void) { start = chrono::steady_clock::now(); }
+		bool expired(void) {
+			auto now = chrono::steady_clock::now();
+
+/* NOTE: Automatically resets start value if trigger time exceeded */
+			if (now - start >= how_long) {
+				start = now;
+				return true;
+			} else {
+				return false;
+			}
+		}
+	private:
+		const chrono::duration<unsigned, ratio<1,1>> how_long;
+		chrono::steady_clock::time_point start;
+}; 
 
 // Fair distribution algorithm
 void dummy_round_robin(inet::inner_if dest, list<config::net_addr> &pool, 
@@ -61,9 +81,6 @@ balancer::balancer(const config::main_task &set)
 		throw error::socket_init{};	
 	}
 
-	if (set.nlb.max_dg_load > chrono::nanoseconds(1s).count()){
-		throw error::bad_max_dg_load{};
-	}
 	max_load = set.nlb.max_dg_load;
 }
 
@@ -71,17 +88,22 @@ balancer::balancer(const config::main_task &set)
 void balancer::run(void)
 {
   	string msg;
-	const long pps = chrono::nanoseconds(1s).count()/max_load;
-	timespec tremain{};
+  	unsigned long long cnt = 0;
 
+	time_interval working_window{1};
+	working_window.begin();
 
 	// Looped until socket operation fail or server pool empty
 	while (recv.receive(msg) && !server_pool.empty()) {
-		auto t1 = chrono::steady_clock::now();
-    	dummy_round_robin(redir, server_pool, msg);
-    	auto tspent = chrono::steady_clock::now() - t1;
-
-    	tremain.tv_nsec = pps - tspent.count();
-    	nanosleep(&tremain, nullptr_t());
+		if (!working_window.expired()) {
+			if ((++cnt) <= max_load) {			
+    			dummy_round_robin(redir, server_pool, msg);
+    			cout << msg << endl;
+			} else {
+				cerr << "DROPPED: \"" << msg << "\"" << endl;
+			}
+		} else {
+			cnt = 0;
+		}
 	}
 }
